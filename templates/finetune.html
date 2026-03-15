@@ -115,7 +115,8 @@
         <div class="export-area">
           <h3>EXPORT</h3>
           <button type="button" id="export-btn">EXPORT CURRENT TIMING & EMPHASIS AS JSON</button>
-          <textarea id="export-output" placeholder="Click 'Export' to generate JSON…"></textarea>
+          <button type="button" id="export-srt-btn">EXPORT AS SRT SUBTITLE FILE</button>
+          <textarea id="export-output" placeholder="Click 'Export' to generate JSON or 'Export as SRT' for subtitle file…"></textarea>
           <p class="hint-small">
             You can copy this JSON into a separate script or tool to render 
             video overlays with the exact same timing and emphasis.
@@ -234,6 +235,51 @@
           }
 
           exportBtn.addEventListener("click", exportJSON);
+
+          // Export SRT subtitle file
+          function exportSRT() {
+            const result = [];
+            const lineNodes = Array.from(document.querySelectorAll(".perf-line"));
+
+            lineNodes.forEach((lineNode, lineIndex) => {
+              const lineStart = parseFloat(lineNode.dataset.start || "0");
+              const lineEnd = parseFloat(lineNode.dataset.end || "0");
+              const wordNodes = Array.from(lineNode.querySelectorAll(".perf-word"));
+
+              // Combine all words in the line for subtitle text
+              const lineText = wordNodes.map(w => w.textContent.trim()).join(" ");
+
+              if (lineText.trim()) {
+                result.push({
+                  index: lineIndex + 1,
+                  start: lineStart,
+                  end: lineEnd,
+                  text: lineText
+                });
+              }
+            });
+
+            // Convert to SRT format
+            const srtContent = result.map(item => {
+              const startTime = formatTime(item.start);
+              const endTime = formatTime(item.end);
+              return `${item.index}\n${startTime} --> ${endTime}\n${item.text}\n`;
+            }).join('\n');
+
+            exportOutput.value = srtContent;
+          }
+
+          function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            const ms = Math.floor((seconds % 1) * 1000);
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')},${ms.toString().padStart(3, '0')}`;
+          }
+
+          const exportSrtBtn = document.getElementById("export-srt-btn");
+          exportSrtBtn.addEventListener("click", exportSRT);
+
         })();
       </script>
       {% endif %}
