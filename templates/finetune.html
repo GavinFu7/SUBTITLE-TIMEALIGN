@@ -75,6 +75,17 @@
 
       {% if audio_url and entries %}
       <section class="section" style="margin-top: 20px;">
+        <div class="export-area">
+          <h3>EXPORT</h3>
+          <button type="button" id="export-btn">EXPORT CURRENT TIMING & EMPHASIS AS JSON</button>
+          <button type="button" id="export-srt-btn">EXPORT AS SRT SUBTITLE FILE</button>
+          <textarea id="export-output" placeholder="Click 'Export' to generate JSON or 'Export as SRT' for subtitle file…"></textarea>
+          <p class="hint-small">
+            You can copy this JSON into a separate script or tool to render 
+            video overlays with the exact same timing and emphasis.
+          </p>
+        </div>
+
         <h2>Player & Editable Highlights</h2>
         <audio id="audio-player" controls>
           <source src="{{ audio_url }}" />
@@ -121,17 +132,6 @@
             {% endfor %}
           </p>
           {% endfor %}
-        </div>
-
-        <div class="export-area">
-          <h3>EXPORT</h3>
-          <button type="button" id="export-btn">EXPORT CURRENT TIMING & EMPHASIS AS JSON</button>
-          <button type="button" id="export-srt-btn">EXPORT AS SRT SUBTITLE FILE</button>
-          <textarea id="export-output" placeholder="Click 'Export' to generate JSON or 'Export as SRT' for subtitle file…"></textarea>
-          <p class="hint-small">
-            You can copy this JSON into a separate script or tool to render 
-            video overlays with the exact same timing and emphasis.
-          </p>
         </div>
       </section>
 
@@ -254,11 +254,20 @@
 
             lineNodes.forEach((lineNode, lineIndex) => {
               const lineStart = parseFloat(lineNode.dataset.start || "0");
-              const lineEnd = parseFloat(lineNode.dataset.end || "0");
-              const wordNodes = Array.from(lineNode.querySelectorAll(".perf-word"));
+              var lineEnd = parseFloat(lineNode.dataset.end || "0");
+              const nextLineNode = lineNodes[lineIndex + 1];
+              if (nextLineNode) {
+                const nextLineStart = parseFloat(nextLineNode.dataset.start || "0");
+                if (nextLineStart - lineEnd < 5) {
+                  lineEnd = nextLineStart;
+                }
+              }
 
-              // Combine all words in the line for subtitle text
-              const lineText = wordNodes.map(w => w.textContent.trim()).join(" ");
+              // Get the full text content of the line, including punctuation
+              var lineText = lineNode.innerText.trim();
+              if (!/[a-zA-Z]/.test(lineText)) {
+                lineText = lineText.replace(/\s+/g, '');
+              }
 
               if (lineText.trim()) {
                 result.push({
